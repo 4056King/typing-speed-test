@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Typing Speed Test</title>
+  <!-- Google Fonts for English and Hindi -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#333">
+
+  <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <style>
+    /* Basic styles for layout */
+    body {
+      font-family: 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    select, textarea, input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .stats {
+      margin-top: 20px;
+    }
+    .highlight-wrong {
+      color: red;
+    }
+    .completed {
+      background-color: #d4ffd4; /* light green background when done */
+    }
+  </style>
+</head>
+<body>
+  <h2>Typing Speed Test (Multilingual)</h2>
+
+  <!-- Language selection dropdown -->
+  <label for="language">Choose Language:</label>
+  <select id="language">
+    <option value="english">English</option>
+    <option value="hindi">Hindi</option>
+  </select>
+
+  <!-- Text to be typed will appear here -->
+  <p id="text-to-type"></p>
+
+  <!-- Textarea where user types -->
+  <textarea id="typed-text" rows="5" placeholder="Start typing here..."></textarea>
+
+  <!-- Stats section -->
+  <div class="stats">
+    <p><strong>Time:</strong> <span id="time">0</span> sec</p>
+    <p><strong>WPM:</strong> <span id="wpm">0</span></p>
+    <p><strong>Accuracy:</strong> <span id="accuracy">100</span>%</p>
+  </div>
+
+  <script>
+    // Sentence options in English and Hindi
+    const texts = {
+      english: [
+        "The quick brown fox jumps over the lazy dog.",
+        "Typing helps you improve your speed and accuracy.",
+        "Practice every day to become better."
+      ],
+      hindi: [
+        "नील आकाश के नीचे हरियाली फैली है।",
+        "कड़ी मेहनत से सफलता मिलती है।",
+        "नियमित अभ्यास से कुशलता आती है।"
+      ]
+    };
+
+    // Selecting DOM elements
+    const languageSelect = document.getElementById('language');
+    const textDisplay = document.getElementById('text-to-type');
+    const typedText = document.getElementById('typed-text');
+    const timeDisplay = document.getElementById('time');
+    const wpmDisplay = document.getElementById('wpm');
+    const accuracyDisplay = document.getElementById('accuracy');
+
+    // Variables for timer and selected text
+    let timer = null, startTime, selectedText = '';
+
+    // Pick a random sentence based on language and reset test
+    function setNewText() {
+      const lang = languageSelect.value; // get selected language
+      const randomText = texts[lang][Math.floor(Math.random() * texts[lang].length)]; // random sentence
+      selectedText = randomText; // store it globally
+      textDisplay.textContent = randomText; // show on screen
+      typedText.value = ''; // clear typing box
+      typedText.disabled = false; // enable typing
+      typedText.classList.remove("completed"); // remove completed color if any
+      resetStats(); // reset timer and stats
+    }
+
+    // Reset timer and stats to 0
+    function resetStats() {
+      clearInterval(timer);
+      timeDisplay.textContent = '0';
+      wpmDisplay.textContent = '0';
+      accuracyDisplay.textContent = '100';
+      timer = null;
+    }
+
+    // Start timer only once (when typing starts)
+    function startTimer() {
+      startTime = Date.now();
+      timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeDisplay.textContent = elapsed;
+        calculateStats();
+      }, 1000); // updates every second
+    }
+
+    // Calculate WPM and Accuracy
+    function calculateStats() {
+      const typed = typedText.value;
+      const wordsTyped = typed.trim().split(/\s+/).length;
+      const elapsed = Math.max((Date.now() - startTime) / 60000, 1/60); // avoid divide by 0
+      const wpm = Math.round(wordsTyped / elapsed);
+
+      // Count matching characters
+      let correctChars = 0;
+      for (let i = 0; i < typed.length && i < selectedText.length; i++) {
+        if (typed[i] === selectedText[i]) correctChars++;
+      }
+      const accuracy = Math.round((correctChars / typed.length) * 100) || 0;
+
+      // Update UI
+      wpmDisplay.textContent = wpm;
+      accuracyDisplay.textContent = accuracy;
+    }
+
+    // Check if user finished typing correctly
+    function checkCompletion() {
+      if (typedText.value.trim() === selectedText.trim()) {
+        clearInterval(timer); // stop the timer
+        typedText.disabled = true; // disable input
+        typedText.classList.add("completed"); // green highlight
+      }
+    }
+
+    // Language change triggers new text
+    languageSelect.addEventListener('change', setNewText);
+    // Typing input logic
+    typedText.addEventListener('input', () => {
+      if (!timer) startTimer(); // start on first input
+      calculateStats();
+      checkCompletion();
+    });
+
+    // Run once when page loads
+    setNewText();
+    // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
+  </script>
+</body>
+</html>
